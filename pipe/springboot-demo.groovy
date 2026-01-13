@@ -2,7 +2,6 @@
 
 pipeline {
     agent any
-
     environment {
         REPO_NAME = 'vuthytourn'
         IMAGE_NAME = 'jenkins-itp-springboot'
@@ -12,21 +11,20 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
-                git branch: 'main',
-            url: 'https://github.com/Vuthy-Tourn/Rest-API.git'
+                git 'https://github.com/Vuthy-Tourn/Rest-API.git'
             }
         }
-
         stage('Check Dockerfile') {
             steps {
                 script {
-                    if (!fileExists('Dockerfile')) {
+                     if (!fileExists('Dockerfile')) {
+                        echo 'Dockerfile not found, loading from Shared Library...'
                         def dockerfile = libraryResource 'spring/dev.Dockerfile'
                         writeFile file: 'Dockerfile', text: dockerfile
-                    }
-                    else {
+                    } else {
                         echo 'Dockerfile found in project'
                     }
                 }
@@ -35,9 +33,7 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh '''
-                docker build -t ${REPO_NAME}/${IMAGE_NAME}:${TAG} .
-                '''
+                sh 'docker build -t ${REPO_NAME}/${IMAGE_NAME}:${TAG} .'
             }
         }
 
@@ -59,10 +55,12 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                docker stop springboot-cont || true
-                docker rm springboot-cont || true
-                docker run -d -p 8081:8080 \
+                    docker stop springboot-cont || true
+                    docker rm springboot-cont || true
+
+                   docker run -d -p 8081:8080 \
                   --name springboot-cont \
+                  --network app-network \
                   ${REPO_NAME}/${IMAGE_NAME}:${TAG}
                 '''
             }
