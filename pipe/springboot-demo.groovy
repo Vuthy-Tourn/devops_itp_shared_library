@@ -1,22 +1,21 @@
-/* groovylint-disable GStringExpressionWithinString */
-@Library("itp_shared_lib@main") _
+@Library('itp_shared_lib@main') _
 
 pipeline {
     agent any
 
     environment {
-        REPO_NAME='vuthytourn'
-        IMAGE_NAME='jenkins-itp-reactjs'
-        TAG='latest'
-        CHAT_ID='777493627'
-        CHAT_TOKEN='8477902807:AAGdQkcWqEb-gtJ19Efup07VDjSeMOIuWB4'
+        REPO_NAME = 'vuthytourn'
+        IMAGE_NAME = 'jenkins-itp-springboot'
+        TAG = 'latest'
+        CHAT_ID = '777493627'
+        CHAT_TOKEN = '8477902807:AAGdQkcWqEb-gtJ19Efup07VDjSeMOIuWB4'
     }
 
     stages {
-
-        stage('Clone Code') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/Vuthy-Tourn/reactjs-fullstack-template.git'
+                git branch: 'main',
+            url: 'https://github.com/Vuthy-Tourn/Rest-API.git'
             }
         }
 
@@ -24,17 +23,17 @@ pipeline {
             steps {
                 script {
                     if (!fileExists('Dockerfile')) {
-                        echo 'Dockerfile not found, loading from Shared Library...'
-                        def dockerfile = libraryResource 'reactjs/dev.Dockerfile'
+                        def dockerfile = libraryResource 'spring/dev.Dockerfile'
                         writeFile file: 'Dockerfile', text: dockerfile
-                    } else {
+                    }
+                    else {
                         echo 'Dockerfile found in project'
                     }
                 }
             }
         }
 
-        stage('Build Image') {
+        stage('Docker Build') {
             steps {
                 sh '''
                 docker build -t ${REPO_NAME}/${IMAGE_NAME}:${TAG} .
@@ -57,26 +56,25 @@ pipeline {
             }
         }
 
-        stage('Run Service') {
+        stage('Deploy') {
             steps {
                 sh '''
-                docker stop react-app || true
-                docker rm react-app || true
-                docker run -dp 3000:80 --name react-app ${REPO_NAME}/${IMAGE_NAME}:${TAG}
+                docker stop springboot-cont || true
+                docker rm springboot-cont || true
+                docker run -d -p 8081:8080 \
+                  --name springboot-cont \
+                  ${REPO_NAME}/${IMAGE_NAME}:${TAG}
                 '''
             }
         }
+    }
 
-        stage('Send Message') {
-            steps {
-                script {
-                    sendTelegramMessage(
-                        'Deploy Successfully 🟢',
-                        CHAT_TOKEN,
-                        CHAT_ID
-                    )
-                }
-            }
+    post {
+        success {
+            sendTelegramMessage( '✅ Spring Boot Docker Build & Deploy Successful', CHAT_TOKEN, CHAT_ID )
+        }
+        failure {
+                sendTelegramMessage( '❌ Spring Boot Pipeline Failed', CHAT_TOKEN, CHAT_ID )
         }
     }
 }
