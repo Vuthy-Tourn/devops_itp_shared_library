@@ -11,10 +11,14 @@ pipeline {
     }
 
     stages {
+         stage('Clean Workspace') {
+        steps { deleteDir() }
+    }
 
         stage('Checkout') {
-            steps {
-                git 'https://github.com/Vuthy-Tourn/Rest-API.git'
+             steps {
+                git branch: 'main',
+                    url: 'https://github.com/Vuthy-Tourn/Rest-API.git'
             }
         }
         stage('Check Dockerfile') {
@@ -60,7 +64,7 @@ pipeline {
 
                    docker run -d -p 8081:8080 \
                   --name springboot-cont \
-                  --network app-network \
+                    --network app-network \
                   ${REPO_NAME}/${IMAGE_NAME}:${TAG}
                 '''
             }
@@ -69,10 +73,10 @@ pipeline {
 
     post {
         success {
-            sendTelegramMessage( '✅ Spring Boot Docker Build & Deploy Successful', CHAT_TOKEN, CHAT_ID )
+            sendTelegramMessage( '✅ Spring Boot Deploy Successful', CHAT_TOKEN, CHAT_ID )
         }
         failure {
-                sendTelegramMessage( '❌ Spring Boot Pipeline Failed', CHAT_TOKEN, CHAT_ID )
+            sendTelegramMessage( '❌ Spring Boot Pipeline Failed', CHAT_TOKEN, CHAT_ID )
         }
     }
 }

@@ -1,4 +1,3 @@
-/* groovylint-disable GStringExpressionWithinString */
 @Library("itp_shared_lib@main") _
 
 pipeline {
@@ -13,6 +12,9 @@ pipeline {
     }
 
     stages {
+         stage('Clean Workspace') {
+        steps { deleteDir() }
+     }
 
         stage('Clone Code') {
             steps {
@@ -71,7 +73,7 @@ pipeline {
             steps {
                 script {
                     sendTelegramMessage(
-                        'Deploy Successfully 🟢',
+                        "Deploy Successfully 🟢",
                         CHAT_TOKEN,
                         CHAT_ID
                     )
